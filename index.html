@@ -25,114 +25,115 @@
   <body>
     <div id="map"></div>
     <script>
-      mapboxgl.accessToken = 'pk.eyJ1IjoiaXNodDciLCJhIjoiY2xsZnJwZHJiMHZqZDNmcGpybG5naDZ6OSJ9.-wtdTuXYx8tr9ERD9hFXKw';
+      mapboxgl.accessToken = 'pk.eyJ1IjoiaXNodDciLCJhIjoiY2xsaGJzZ21rMDk5djNscGFmYzFxYjNpbCJ9.yYxwybRpZjELeW7sSrvJuQ';
       const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-79.999732, 40.4374],
+        center: [-122.26819487628342,37.7929130037637],
         zoom: 11
       });
       map.on('load', () => {
         map.addSource('trees', {
           'type': 'geojson',
-          'data': 'data/trees.geojson'
+          'data': 'data/oakland_quality.geojson'
         });
 
-        map.addLayer(
-          {
-            'id': 'trees-heat',
-            'type': 'heatmap',
-            'source': 'trees',
-            'maxzoom': 12,
-            'paint': {
-              // increase weight as diameter breast height increases
-              'heatmap-weight': {
-                'property': 'dbh',
-                'type': 'exponential',
-                'stops': [
-                  [1, 0],
-                  [62, 1]
-                ]
-              },
-              // increase intensity as zoom level increases
-              'heatmap-intensity': {
-                'stops': [
-                  [11, 1],
-                  [15, 3]
-                ]
-              },
-              // use sequential color palette to use exponentially as the weight increases
-              'heatmap-color': [
-                'interpolate',
-                ['linear'],
-                ['heatmap-density'],
-                0,
-                'rgba(236,222,239,0)',
-                0.2,
-                'rgb(208,209,230)',
-                0.4,
-                'rgb(166,189,219)',
-                0.6,
-                'rgb(103,169,207)',
-                0.8,
-                'rgb(28,144,153)'
-              ],
-              // increase radius as zoom increases
-              'heatmap-radius': {
-                'stops': [
-                  [11, 15],
-                  [15, 20]
-                ]
-              },
-              // decrease opacity to transition into the circle layer
-              'heatmap-opacity': {
-                'default': 1,
-                'stops': [
-                  [14, 1],
-                  [15, 0]
-                ]
-              }
-            }
-          },
-          'waterway-label'
-        );
+        // map.addLayer(
+        //   {
+        //     'id': 'trees-heat',
+        //     'type': 'heatmap',
+        //     'source': 'trees',
+        //     'maxzoom': 15,
+        //     'paint': {
+        //       // increase weight as diameter breast height increases
+        //       'heatmap-weight': {
+        //         'property': 'quality',
+        //         'type': 'exponential',
+        //         'stops': [
+        //           [0, 0],
+        //           [1, 1]
+        //         ]
+        //       },
+        //       // increase intensity as zoom level increases
+        //       'heatmap-intensity': {
+        //         'stops': [
+        //           [11, 1],
+        //           [15, 3]
+        //         ]
+        //       },
+        //       // use sequential color palette to use exponentially as the weight increases
+        //       'heatmap-color': [
+        //         'interpolate',
+        //         ['linear'],
+        //         ['heatmap-density'],
+        //         0,
+        //         'rgba(236,0,0,0)',
+        //         0.2,
+        //         'rgb(208,0,0)',
+        //         0.4,
+        //         'rgb(166,0,0)',
+        //         0.6,
+        //         'rgb(103,0,0)',
+        //         0.8,
+        //         'rgb(28,0,0)'
+        //       ],
+        //       // increase radius as zoom increases
+        //       'heatmap-radius': {
+        //         'stops': [
+        //           [11, 15],
+        //           [15, 20]
+        //         ]
+        //       },
+        //       // decrease opacity to transition into the circle layer
+        //       'heatmap-opacity': {
+        //         'default': 1,
+        //         'stops': [
+        //           [14, 1],
+        //           [15, 0]
+        //         ]
+        //       }
+        //     }
+        //   },
+        //   'waterway-label'
+        // );
 
         map.addLayer(
           {
             'id': 'trees-point',
             'type': 'circle',
             'source': 'trees',
-            'minzoom': 11,
+            'minzoom': 8,
             'paint': {
               // increase the radius of the circle as the zoom level and dbh value increases
               'circle-radius': {
-                'property': 'dbh',
+                'property': 'quality',
                 'type': 'exponential',
                 'stops': [
-                  [{ zoom: 15, value: 1 }, 5],
-                  [{ zoom: 15, value: 62 }, 10],
-                  [{ zoom: 22, value: 1 }, 20],
-                  [{ zoom: 22, value: 62 }, 50]
+                  [{ zoom: 15, value: 0 }, 6],
+                  [{ zoom: 15, value: 1 }, 6],
+                  [{ zoom: 22, value: 0 }, 6],
+                  [{ zoom: 22, value: 1 }, 6]
                 ]
               },
               'circle-color': {
-                'property': 'dbh',
+                'property': 'quality',
                 'type': 'exponential',
                 'stops': [
-                  [0, 'rgba(236,222,239,0)'],
-                  [10, 'rgb(236,222,239)'],
-                  [20, 'rgb(208,209,230)'],
-                  [30, 'rgb(166,189,219)'],
-                  [40, 'rgb(103,169,207)'],
-                  [50, 'rgb(28,144,153)'],
-                  [60, 'rgb(1,108,89)']
+                  [0, 'rgb(0,0,255)'],
+                  [0.15, 'rgb(36,0,218)'],
+                  [0.3, 'rgb(73,0,183)'],
+                  [0.45, 'rgb(110,0,146)'],
+                  [0.6, 'rgb(146,0,110)'],
+                  [0.75, 'rgb(183,0,73)'],
+                  [0.9, 'rgb(218,0,36)'],
+                  [1.0, 'rgb(255,0,0)']
                 ]
               },
               'circle-stroke-color': 'white',
-              'circle-stroke-width': 1,
+              'circle-stroke-width': 0,
               'circle-opacity': {
                 'stops': [
-                  [14, 0],
+                  [8, 1],
                   [15, 1]
                 ]
               }
@@ -146,9 +147,12 @@
       map.on('click', 'trees-point', (event) => {
         new mapboxgl.Popup()
           .setLngLat(event.features[0].geometry.coordinates)
-          .setHTML(`<strong>DBH:</strong> ${event.features[0].properties.dbh}`)
+          .setHTML(`<strong>quality:</strong> ${event.features[0].properties.quality}` + `<a href=${event.features[0].properties.link} target="_blank" >  Img</a>`)
           .addTo(map);
       });
     </script>
   </body>
-</html>
+<!-- <a href="https://www.example.com">event.features[0].properties.quality</a>
+</html> -->
+
+

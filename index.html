@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Live GPS Tracking (Head-Up Mode)</title>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAl1JPWxjm4il-ZyH812HzF5gZTxiJAg2g&libraries=geometry"></script>
-
+    
     <style>
         body, html {
             margin: 0;
@@ -17,7 +16,7 @@
         #map {
             height: 100vh;
             width: 100%;
-             background: gray; 
+            background: gray;
         }
         #start-btn {
             position: absolute;
@@ -42,6 +41,7 @@
         let map, marker, headingArrow;
         let watchID = null;
         let currentHeading = 0;
+        let hasOrientationPermission = false;
 
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
@@ -76,7 +76,29 @@
                 },
             });
 
-            document.getElementById("start-btn").addEventListener("click", startTracking);
+            document.getElementById("start-btn").addEventListener("click", requestPermissions);
+        }
+
+        function requestPermissions() {
+            if (typeof DeviceOrientationEvent.requestPermission === "function") {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === "granted") {
+                            hasOrientationPermission = true;
+                            window.addEventListener("deviceorientation", updateHeading, true);
+                        } else {
+                            alert("Device orientation access denied. Compass may not work.");
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Non-iOS browsers allow access by default
+                hasOrientationPermission = true;
+                window.addEventListener("deviceorientation", updateHeading, true);
+            }
+
+            startTracking();
+            document.getElementById("start-btn").style.display = "none"; // Hide button after activation
         }
 
         function startTracking() {
@@ -89,21 +111,6 @@
             } else {
                 alert("Geolocation is not supported by your browser.");
             }
-
-            // Request access to device orientation
-            if (typeof DeviceOrientationEvent.requestPermission === "function") {
-                DeviceOrientationEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === "granted") {
-                            window.addEventListener("deviceorientation", updateHeading, true);
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                window.addEventListener("deviceorientation", updateHeading, true);
-            }
-
-            document.getElementById("start-btn").style.display = "none"; // Hide start button after activation
         }
 
         function updatePosition(position) {
@@ -132,7 +139,7 @@
         }
 
         function updateHeading(event) {
-            if (event.alpha !== null) {
+            if (hasOrientationPermission && event.alpha !== null) {
                 currentHeading = event.alpha; // Use device compass heading if GPS heading is unavailable
             }
         }
@@ -140,8 +147,8 @@
         function handleError(error) {
             console.error("Error getting location:", error);
         }
-
-        window.onload = initMap;
     </script>
+
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap&libraries=geometry"></script>
 </body>
 </html>

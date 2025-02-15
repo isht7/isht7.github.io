@@ -109,7 +109,7 @@
     }
 
     function loadTrajectory() {
-      fetch("/static/trajectory.json")
+      fetch("data/trajectory.json")
         .then((response) => response.json())
         .then((data) => {
           const pathCoordinates = data.map((point) => ({

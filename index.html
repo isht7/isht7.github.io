@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, user-scalable=no"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Live GPS Tracking (Head-Up Mode)</title>
 
   <style>
@@ -33,6 +30,8 @@
       font-size: 16px;
       border-radius: 5px;
       cursor: pointer;
+      z-index: 9999; /* Ensure button is above the map */
+      display: block; /* Ensure button is visible */
     }
   </style>
 </head>
@@ -45,9 +44,11 @@
     let watchID = null;
     let currentHeading = 0;
     let hasOrientationPermission = false;
+    let wakeLock = null;
 
     function initMap() {
-      // 1. Create the map with a default center
+      console.log("Initializing map...");
+
       map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 37.7749, lng: -122.4194 },
         zoom: 21,
@@ -56,7 +57,6 @@
         tilt: 45,
       });
 
-      // 2. (Optional) Immediately request current position to center/zoom
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -65,10 +65,10 @@
               lng: position.coords.longitude,
             };
             map.setCenter(userLatLng);
-            map.setZoom(21);
+            console.log("Initial position set:", userLatLng);
           },
           (error) => {
-            console.error("Error getting geolocation:", error);
+            console.error("Error getting initial location:", error);
           },
           {
             enableHighAccuracy: true,
@@ -80,7 +80,6 @@
         alert("Geolocation is not supported by this browser.");
       }
 
-      // 3. Initialize the markers
       marker = new google.maps.Marker({
         map,
         title: "You are here",
@@ -106,22 +105,18 @@
         },
       });
 
-      // 4. Load the trajectory data and show as a red polyline
       loadTrajectory();
     }
 
-    // Function to fetch and draw the trajectory
     function loadTrajectory() {
-      // Replace './trajectory.json' with the correct path/URL to your JSON file
-      fetch("data/trajectory.json")
+      fetch("/static/trajectory.json")
         .then((response) => response.json())
         .then((data) => {
-          // data is an array of { latitude, longitude }
-          const pathCoordinates = data.map((point) => {
-            return { lat: point.latitude, lng: point.longitude };
-          });
+          const pathCoordinates = data.map((point) => ({
+            lat: point.latitude,
+            lng: point.longitude,
+          }));
 
-          // Create a red polyline
           const trajectoryPath = new google.maps.Polyline({
             path: pathCoordinates,
             geodesic: true,
@@ -130,7 +125,6 @@
             strokeWeight: 3,
           });
 
-          // Show the polyline on the map
           trajectoryPath.setMap(map);
         })
         .catch((error) => {
@@ -139,6 +133,8 @@
     }
 
     function requestPermissions() {
+      console.log("requestPermissions() called");
+
       if (typeof DeviceOrientationEvent.requestPermission === "function") {
         DeviceOrientationEvent.requestPermission()
           .then((permissionState) => {
@@ -155,12 +151,13 @@
         window.addEventListener("deviceorientation", updateHeading, true);
       }
 
+      requestWakeLock();
       startTracking();
-      document.getElementById("start-btn").style.display = "none"; // Hide button
     }
 
     function startTracking() {
       console.log("startTracking() called.");
+
       if (navigator.geolocation) {
         watchID = navigator.geolocation.watchPosition(
           (position) => {
@@ -177,7 +174,7 @@
           }
         );
       } else {
-        console.error("Geolocation not supported");
+        console.error("Geolocation not supported.");
       }
     }
 
@@ -189,7 +186,7 @@
       headingArrow.setPosition(newPos);
 
       if (heading !== null) {
-        currentHeading = heading; // Use GPS heading if available
+        currentHeading = heading;
       }
 
       headingArrow.setIcon({
@@ -202,21 +199,53 @@
         strokeColor: "black",
       });
 
-      // If you'd like to rotate the base map, uncomment and ensure you have vector maps:
-      // map.setHeading(currentHeading);
-
       map.setCenter(newPos);
     }
 
     function updateHeading(event) {
-      console.log("Device orientation event:", event.alpha, event.beta, event.gamma);
       if (hasOrientationPermission && event.alpha !== null) {
         currentHeading = event.alpha;
       }
     }
+
+    async function requestWakeLock() {
+      if ("wakeLock" in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request("screen");
+          console.log("Wake lock is active");
+
+          wakeLock.addEventListener("release", () => {
+            console.log("Wake lock was released");
+          });
+        } catch (err) {
+          console.error("Failed to obtain wake lock:", err);
+        }
+      } else {
+        console.warn("Wake Lock API not supported on this device.");
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const startBtn = document.getElementById("start-btn");
+      if (startBtn) {
+        console.log("Start button found.");
+        startBtn.addEventListener("click", function () {
+          console.log("Start button clicked.");
+          requestPermissions();
+        });
+      } else {
+        console.error("Start button not found in the DOM.");
+      }
+    });
   </script>
 
-  <!-- Load the Maps JavaScript API and call initMap() once loaded -->
   <script
     async
     defer

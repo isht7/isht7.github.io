@@ -113,7 +113,7 @@
     // Function to fetch and draw the trajectory
     function loadTrajectory() {
       // Replace './trajectory.json' with the correct path/URL to your JSON file
-      fetch("/static/trajectory.json")
+      fetch("data/trajectory.json")
         .then((response) => response.json())
         .then((data) => {
           // data is an array of { latitude, longitude }

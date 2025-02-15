@@ -100,17 +100,27 @@
             document.getElementById("start-btn").style.display = "none"; // Hide button after activation
         }
 
-        function startTracking() {
-            if (navigator.geolocation) {
-                watchID = navigator.geolocation.watchPosition(updatePosition, handleError, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000,
-                });
-            } else {
-                alert("Geolocation is not supported by your browser.");
+function startTracking() {
+    console.log("startTracking() called.");
+    if (navigator.geolocation) {
+        watchID = navigator.geolocation.watchPosition(
+            (position) => {
+                console.log("Position updated:", position.coords);
+                updatePosition(position);
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000,
             }
-        }
+        );
+    } else {
+        console.error("Geolocation not supported");
+    }
+}
 
         function updatePosition(position) {
             const { latitude, longitude, heading } = position.coords;
@@ -137,11 +147,12 @@
             map.setCenter(newPos);
         }
 
-        function updateHeading(event) {
-            if (hasOrientationPermission && event.alpha !== null) {
-                currentHeading = event.alpha; // Use device compass heading if GPS heading is unavailable
-            }
-        }
+function updateHeading(event) {
+    console.log("Device orientation event:", event.alpha, event.beta, event.gamma);
+    if (hasOrientationPermission && event.alpha !== null) {
+        currentHeading = event.alpha;
+    }
+}
 
         function handleError(error) {
             console.error("Error getting location:", error);

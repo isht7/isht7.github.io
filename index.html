@@ -43,41 +43,14 @@
         let currentHeading = 0;
         let hasOrientationPermission = false;
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 18,
-                mapTypeId: "roadmap",
-                tilt: 45,
-                disableDefaultUI: true,
-            });
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 37.7749, lng: -122.4194 }, // some fixed coords
+    zoom: 12,
+    disableDefaultUI: true,
+  });
+}
 
-            marker = new google.maps.Marker({
-                map,
-                title: "You are here",
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 8,
-                    fillColor: "#4285F4",
-                    fillOpacity: 1,
-                    strokeWeight: 2,
-                    strokeColor: "#FFFFFF",
-                },
-            });
-
-            headingArrow = new google.maps.Marker({
-                map,
-                icon: {
-                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                    scale: 5,
-                    fillColor: "red",
-                    fillOpacity: 1,
-                    strokeWeight: 2,
-                    strokeColor: "black",
-                },
-            });
-
-            document.getElementById("start-btn").addEventListener("click", requestPermissions);
-        }
 
         function requestPermissions() {
             if (typeof DeviceOrientationEvent.requestPermission === "function") {

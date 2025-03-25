@@ -1,255 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Live GPS Tracking (Head-Up Mode)</title>
-
+  <title>CSV Path Visualizer</title>
+  <meta charset="utf-8" />
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAl1JPWxjm4il-ZyH812HzF5gZTxiJAg2g"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-    #map {
-      height: 100vh;
-      width: 100%;
-      background: gray;
-    }
-    #start-btn {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #4285f4;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 9999; /* Ensure button is above the map */
-      display: block; /* Ensure button is visible */
-    }
+    body { font-family: sans-serif; }
+    #map { height: 600px; width: 100%; margin-top: 10px; }
+    #legend { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <button id="start-btn">Start Tracking</button>
+  <h2>CSV Route Visualizer</h2>
+  
+  <!-- Upload CSV -->
+  <label for="csvFileInput">Upload CSV file:</label>
+  <input type="file" id="csvFileInput" accept=".csv" />
+
+  <button id="useJsonBtn">Or Click Here to Use Default JSON</button>
+
+
+  <!-- Parameter Dropdown -->
+  <br><br>
+  <label for="parameterDropdown">Choose parameter to visualize:</label>
+  <select id="parameterDropdown"></select>
+
+  <!-- Map + Legend -->
   <div id="map"></div>
+  <div id="legend"></div>
 
-  <script>
-    let map, marker, headingArrow;
-    let watchID = null;
-    let currentHeading = 0;
-    let hasOrientationPermission = false;
-    let wakeLock = null;
-
-    function initMap() {
-      console.log("Initializing map...");
-
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 37.7749, lng: -122.4194 },
-        zoom: 21,
-        disableDefaultUI: true,
-        mapTypeId: "roadmap",
-        tilt: 45,
-      });
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLatLng = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            map.setCenter(userLatLng);
-            console.log("Initial position set:", userLatLng);
-          },
-          (error) => {
-            console.error("Error getting initial location:", error);
-          },
-          {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 5000,
-          }
-        );
-      } else {
-        alert("Geolocation is not supported by this browser.");
-      }
-
-      marker = new google.maps.Marker({
-        map,
-        title: "You are here",
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: "#4285F4",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: "#FFFFFF",
-        },
-      });
-
-      headingArrow = new google.maps.Marker({
-        map,
-        icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 5,
-          fillColor: "red",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: "black",
-        },
-      });
-
-      loadTrajectory();
-    }
-
-    function loadTrajectory() {
-      fetch("data/trajectory.json")
-        .then((response) => response.json())
-        .then((data) => {
-          const pathCoordinates = data.map((point) => ({
-            lat: point.latitude,
-            lng: point.longitude,
-          }));
-
-          const trajectoryPath = new google.maps.Polyline({
-            path: pathCoordinates,
-            geodesic: true,
-            strokeColor: "#FF0000",
-            strokeOpacity: 1.0,
-            strokeWeight: 3,
-          });
-
-          trajectoryPath.setMap(map);
-        })
-        .catch((error) => {
-          console.error("Failed to load trajectory data:", error);
-        });
-    }
-
-    function requestPermissions() {
-      console.log("requestPermissions() called");
-
-      if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        DeviceOrientationEvent.requestPermission()
-          .then((permissionState) => {
-            if (permissionState === "granted") {
-              hasOrientationPermission = true;
-              window.addEventListener("deviceorientation", updateHeading, true);
-            } else {
-              alert("Device orientation access denied. Compass may not work.");
-            }
-          })
-          .catch(console.error);
-      } else {
-        hasOrientationPermission = true;
-        window.addEventListener("deviceorientation", updateHeading, true);
-      }
-
-      requestWakeLock();
-      startTracking();
-    }
-
-    function startTracking() {
-      console.log("startTracking() called.");
-
-      if (navigator.geolocation) {
-        watchID = navigator.geolocation.watchPosition(
-          (position) => {
-            console.log("Position updated:", position.coords);
-            updatePosition(position);
-          },
-          (error) => {
-            console.error("Geolocation error:", error);
-          },
-          {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 5000,
-          }
-        );
-      } else {
-        console.error("Geolocation not supported.");
-      }
-    }
-
-    function updatePosition(position) {
-      const { latitude, longitude, heading } = position.coords;
-      const newPos = new google.maps.LatLng(latitude, longitude);
-
-      marker.setPosition(newPos);
-      headingArrow.setPosition(newPos);
-
-      if (heading !== null) {
-        currentHeading = heading;
-      }
-
-      headingArrow.setIcon({
-        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-        scale: 5,
-        rotation: currentHeading,
-        fillColor: "red",
-        fillOpacity: 1,
-        strokeWeight: 2,
-        strokeColor: "black",
-      });
-
-      map.setCenter(newPos);
-    }
-
-    function updateHeading(event) {
-      if (hasOrientationPermission && event.alpha !== null) {
-        currentHeading = event.alpha;
-      }
-    }
-
-    async function requestWakeLock() {
-      if ("wakeLock" in navigator) {
-        try {
-          wakeLock = await navigator.wakeLock.request("screen");
-          console.log("Wake lock is active");
-
-          wakeLock.addEventListener("release", () => {
-            console.log("Wake lock was released");
-          });
-        } catch (err) {
-          console.error("Failed to obtain wake lock:", err);
-        }
-      } else {
-        console.warn("Wake Lock API not supported on this device.");
-      }
-    }
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden && wakeLock) {
-        wakeLock.release();
-        wakeLock = null;
-      }
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-      const startBtn = document.getElementById("start-btn");
-      if (startBtn) {
-        console.log("Start button found.");
-        startBtn.addEventListener("click", function () {
-          console.log("Start button clicked.");
-          requestPermissions();
-        });
-      } else {
-        console.error("Start button not found in the DOM.");
-      }
-    });
-  </script>
-
-  <script
-    async
-    defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAl1JPWxjm4il-ZyH812HzF5gZTxiJAg2g&callback=initMap"
-  ></script>
+  <!-- Main logic -->
+  <script src="main.js"></script>
 </body>
 </html>

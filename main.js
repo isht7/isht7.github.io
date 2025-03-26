@@ -63,7 +63,7 @@ function drawColoredLine(data, param) {
   currentPolylines.forEach(polyline => polyline.setMap(null));
   currentPolylines = [];
 
-  map.setCenter({ lat: data[0]["Latitude (deg)"], lng: data[0]["Longitude (deg)"] });
+  //map.setCenter({ lat: data[0]["Latitude (deg)"], lng: data[0]["Longitude (deg)"] });
 
   if (!param) {
     const polyline = new google.maps.Polyline({

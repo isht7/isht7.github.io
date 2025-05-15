@@ -6,6 +6,15 @@ let currentPolylines = [];
 window.onload = () => {
   document.getElementById("csvFileInput").addEventListener("change", handleCSVUpload);
   document.getElementById("useJsonBtn").addEventListener("click", loadJsonFallback);
+  document.getElementById("applyNthBtn").addEventListener("click", () => {
+  const n = parseInt(document.getElementById("nthInput").value);
+  if (!pathData.length || isNaN(n) || n < 1) return;
+
+  const filtered = pathData.filter((_, i) => i % n === 0);
+  initMap(filtered);
+  populateDropdown(filtered[0]);
+});
+
 };
 
 function handleCSVUpload(e) {

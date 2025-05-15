@@ -50,6 +50,15 @@ function detectLatLngKeys(row) {
   } else if ("latitude" in row && "longitude" in row) {
     latKey = "latitude";
     lngKey = "longitude";
+
+    // Convert all lat/lng values to numbers
+    pathData = pathData.map(d => {
+      return {
+        ...d,
+        [latKey]: parseFloat(d[latKey]),
+        [lngKey]: parseFloat(d[lngKey])
+      };
+    });
   } else {
     alert("No valid latitude/longitude columns found.");
     throw new Error("Missing latitude/longitude columns.");

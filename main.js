@@ -1,20 +1,20 @@
-
 let map;
 let pathData = [];
 let currentPolylines = [];
+let latKey = "Latitude (deg)";
+let lngKey = "Longitude (deg)";
 
 window.onload = () => {
   document.getElementById("csvFileInput").addEventListener("change", handleCSVUpload);
   document.getElementById("useJsonBtn").addEventListener("click", loadJsonFallback);
   document.getElementById("applyNthBtn").addEventListener("click", () => {
-  const n = parseInt(document.getElementById("nthInput").value);
-  if (!pathData.length || isNaN(n) || n < 1) return;
+    const n = parseInt(document.getElementById("nthInput").value);
+    if (!pathData.length || isNaN(n) || n < 1) return;
 
-  const filtered = pathData.filter((_, i) => i % n === 0);
-  initMap(filtered);
-  populateDropdown(filtered[0]);
-});
-
+    const filtered = pathData.filter((_, i) => i % n === 0);
+    initMap(filtered);
+    populateDropdown(filtered[0]);
+  });
 };
 
 function handleCSVUpload(e) {
@@ -25,6 +25,7 @@ function handleCSVUpload(e) {
     skipEmptyLines: true,
     complete: function(results) {
       pathData = results.data;
+      detectLatLngKeys(pathData[0]);
       initMap(pathData);
       populateDropdown(pathData[0]);
     }
@@ -36,15 +37,29 @@ function loadJsonFallback() {
     .then(response => response.json())
     .then(data => {
       pathData = data;
+      detectLatLngKeys(pathData[0]);
       initMap(pathData);
       populateDropdown(pathData[0]);
     });
 }
 
+function detectLatLngKeys(row) {
+  if ("Latitude (deg)" in row && "Longitude (deg)" in row) {
+    latKey = "Latitude (deg)";
+    lngKey = "Longitude (deg)";
+  } else if ("latitude" in row && "longitude" in row) {
+    latKey = "latitude";
+    lngKey = "longitude";
+  } else {
+    alert("No valid latitude/longitude columns found.");
+    throw new Error("Missing latitude/longitude columns.");
+  }
+}
+
 function initMap(data) {
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 18,
-    center: { lat: data[0]["Latitude (deg)"], lng: data[0]["Longitude (deg)"] },
+    center: { lat: data[0][latKey], lng: data[0][lngKey] },
     mapTypeId: "satellite"
   });
 
@@ -55,7 +70,7 @@ function populateDropdown(row) {
   const dropdown = document.getElementById("parameterDropdown");
   dropdown.innerHTML = "<option value=''>-- Select Parameter --</option>";
   for (const key in row) {
-    if (key !== "Latitude (deg)" && key !== "Longitude (deg)") {
+    if (key !== latKey && key !== lngKey) {
       const option = document.createElement("option");
       option.value = key;
       option.textContent = key;
@@ -72,11 +87,9 @@ function drawColoredLine(data, param) {
   currentPolylines.forEach(polyline => polyline.setMap(null));
   currentPolylines = [];
 
-  //map.setCenter({ lat: data[0]["Latitude (deg)"], lng: data[0]["Longitude (deg)"] });
-
   if (!param) {
     const polyline = new google.maps.Polyline({
-      path: data.map(d => ({ lat: d["Latitude (deg)"], lng: d["Longitude (deg)"] })),
+      path: data.map(d => ({ lat: d[latKey], lng: d[lngKey] })),
       geodesic: true,
       strokeColor: "#0000FF",
       strokeOpacity: 1.0,
@@ -104,8 +117,8 @@ function drawColoredLine(data, param) {
 
       const segment = new google.maps.Polyline({
         path: [
-          { lat: data[i]["Latitude (deg)"], lng: data[i]["Longitude (deg)"] },
-          { lat: data[i + 1]["Latitude (deg)"], lng: data[i + 1]["Longitude (deg)"] }
+          { lat: data[i][latKey], lng: data[i][lngKey] },
+          { lat: data[i + 1][latKey], lng: data[i + 1][lngKey] }
         ],
         geodesic: true,
         strokeColor: color,
@@ -143,8 +156,8 @@ function drawColoredLine(data, param) {
 
       const segment = new google.maps.Polyline({
         path: [
-          { lat: data[i]["Latitude (deg)"], lng: data[i]["Longitude (deg)"] },
-          { lat: data[i + 1]["Latitude (deg)"], lng: data[i + 1]["Longitude (deg)"] }
+          { lat: data[i][latKey], lng: data[i][lngKey] },
+          { lat: data[i + 1][latKey], lng: data[i + 1][lngKey] }
         ],
         geodesic: true,
         strokeColor: color,
@@ -174,7 +187,6 @@ function getColorBlueToRed(ratio) {
   const b = Math.floor(255 * (1 - ratio));
   return `rgb(${r},${g},${b})`;
 }
-
 
 function drawLegendWithHistogram(param, values, min, max) {
   const legend = document.getElementById("legend");

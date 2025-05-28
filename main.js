@@ -77,20 +77,26 @@ function initMap(data) {
 
 function populateDropdown(row) {
   const dropdown = document.getElementById("parameterDropdown");
-  dropdown.innerHTML = "<option value=''>-- Select Parameter --</option>";
+
+  // Clear dropdown and remove old listeners by cloning it
+  const newDropdown = dropdown.cloneNode(false);
+  dropdown.parentNode.replaceChild(newDropdown, dropdown);
+
+  newDropdown.innerHTML = "<option value=''>-- Select Parameter --</option>";
   for (const key in row) {
     if (key !== latKey && key !== lngKey) {
       const option = document.createElement("option");
       option.value = key;
       option.textContent = key;
-      dropdown.appendChild(option);
+      newDropdown.appendChild(option);
     }
   }
 
-  dropdown.addEventListener("change", () => {
-    drawColoredLine(pathData, dropdown.value);
+  newDropdown.addEventListener("change", () => {
+    drawColoredLine(pathData, newDropdown.value);
   });
 }
+
 
 function drawColoredLine(data, param) {
   currentPolylines.forEach(polyline => polyline.setMap(null));

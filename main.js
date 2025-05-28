@@ -120,6 +120,13 @@ function drawColoredLine(data, param) {
 
   if (isNumericColumn) {
     const filteredValues = values.filter(v => v !== null && !isNaN(v));
+    
+    if (filteredValues.length === 0) {
+      console.warn("Non-numeric or missing values:", values);
+      alert(`No numeric values found for "${param}"`);
+      return;
+    }
+    
     const min = Math.min(...filteredValues);
     const max = Math.max(...filteredValues);
 
